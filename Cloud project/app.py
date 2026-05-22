@@ -34,7 +34,7 @@ MOCK_BOOKINGS = {}
 # Set up default credentials or IAM role detection
 try:
     # Use standard us-east-1 as default region if not defined
-    aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    aws_region = os.environ.get('AWS_DEFAULT_REGION', 'ap-south-1')
     
     # Try to initialize clients with default credential chain (IAM Role / AWS CLI profile)
     dynamodb = boto3.resource('dynamodb', region_name=aws_region)
@@ -125,9 +125,9 @@ def initialize_aws_resources():
         else:
             logger.info(f"Table '{name}' already exists.")
 
-    create_table('Users', 'user_id')
-    create_table('Movies', 'movie_id')
-    create_table('Bookings', 'booking_id')
+    create_table('Userss', 'email')
+    create_table('Movies', 'email')
+    create_table('Bookings', 'email')
 
     # Seed default movies if the Movies table is empty
     try:
@@ -154,7 +154,7 @@ def initialize_aws_resources():
     # 2. Initialize SNS Topic
     try:
         logger.info("Locating or creating SNS Topic 'MovieTicketBookingNotifications'...")
-        topic_resp = sns_client.create_topic(Name='MovieTicketBookingNotifications')
+        topic_resp = sns_client.create_topic(Name='cinesns')
         SNS_TOPIC_ARN = topic_resp['TopicArn']
         logger.info(f"SNS Topic active: {SNS_TOPIC_ARN}")
     except Exception as e:
