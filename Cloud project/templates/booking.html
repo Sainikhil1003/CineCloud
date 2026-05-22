@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCloud - Book Tickets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ==================================================
+           DESIGN SYSTEM: CORE TOKENS & RESET
+           ================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0c0817 0%, #150b2b 50%, #05030a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-fuchsia: #ff007f;
+            --neon-cyan: #00f0ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a9a4c2;
+            --btn-gradient: linear-gradient(90deg, #ff007f 0%, #7f00ff 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Glassmorphism Common Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==================================================
+           RESPONSIVE GLOWING NAVBAR
+           ================================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(12, 8, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .nav-btn {
+            background: var(--btn-gradient);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        .burger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .burger div {
+            width: 25px;
+            height: 3px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================================================
+           FLASH MESSAGES
+           ================================================== */
+        .flash-container {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease forwards;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.1);
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* ==================================================
+           BOOKING WORKSPACE LAYOUT
+           ================================================== */
+        .container {
+            flex-grow: 1;
+            width: 90%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 120px 0 80px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .movie-details-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .movie-poster-large {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .movie-details-body {
+            padding: 30px;
+        }
+
+        .details-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        .details-title span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .meta-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        .meta-row span.label {
+            color: var(--neon-fuchsia);
+            font-weight: 700;
+            min-width: 100px;
+        }
+
+        /* RIGHT FORM SIDE */
+        .booking-form-card {
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .booking-form-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--btn-gradient);
+        }
+
+        .form-header {
+            margin-bottom: 30px;
+        }
+
+        .form-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .form-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .form-group input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Live Calculation Table Summary Card */
+        .calc-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .calc-row.total {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+            margin-top: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .calc-row.total .total-price-value {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        }
+
+        .booking-badge {
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+            line-height: 1.4;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--btn-gradient);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        /* ==================================================
+           FOOTER
+           ================================================== */
+        footer {
+            background: rgba(6, 4, 13, 0.95);
+            border-top: 1px solid var(--glass-border);
+            padding: 30px 5%;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* ==================================================
+           ANIMATIONS & KEYFRAMES
+           ================================================== */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* ==================================================
+           MOBILE RESPONSIVENESS
+           ================================================== */
+        @media screen and (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: 70px;
+                height: calc(100vh - 70px);
+                background: rgba(12, 8, 23, 0.98);
+                backdrop-filter: blur(25px);
+                flex-direction: column;
+                width: 100%;
+                padding: 50px 0;
+                gap: 30px;
+                transition: right 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .nav-links.nav-active {
+                right: 0;
+            }
+
+            .burger {
+                display: flex;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+                padding-top: 100px;
+                gap: 30px;
+            }
+
+            .booking-form-card {
+                padding: 30px 20px;
+            }
+        }
+
+        .toggle .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .toggle .line2 {
+            opacity: 0;
+        }
+        .toggle .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION BAR
+         ========================================== -->
+    <nav>
+        <a href="/" class="logo">
+            <span>Cine</span>Cloud
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/movies">Movies</a></li>
+            <li><a href="/bookings">My Bookings</a></li>
+            <li><a href="/logout" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Sign Out</a></li>
+        </ul>
+        <div class="burger" id="burgerToggle">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         FLASH MESSAGES
+         ========================================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-btn" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         BOOKING VIEW WORKSPACE
+         ========================================== -->
+    <section class="container">
+        <!-- 1. LEFT SIDE: MOVIE INFO CARD -->
+        <div class="glass-card movie-details-card">
+            <img src="{{ movie.image_url }}" alt="{{ movie.movie_name }}" class="movie-poster-large">
+            <div class="movie-details-body">
+                <h2 class="details-title">Selected <span>Showtime</span></h2>
+                <div class="meta-group">
+                    <div class="meta-row">
+                        <span class="label">MOVIE:</span>
+                        <span style="color: #fff; font-weight: 600;">{{ movie.movie_name }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="label">THEATER:</span>
+                        <span>{{ movie.theater }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="label">TIMING:</span>
+                        <span>{{ movie.timing }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="label">TICKET PRICE:</span>
+                        <span style="color: var(--neon-cyan); font-weight: 700;">${{ movie.ticket_price }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. RIGHT SIDE: BOOKING FORM -->
+        <div class="glass-card booking-form-card">
+            <div class="form-header">
+                <h2 class="form-title">Seat <span>Selection</span></h2>
+                <p class="form-subtitle">Choose number of seats to instantly place booking.</p>
+            </div>
+
+            <form action="/book/{{ movie.movie_id }}" method="POST">
+                <div class="form-group">
+                    <label for="seatInput">NUMBER OF SEATS</label>
+                    <input type="number" id="seatInput" name="seats" min="1" max="10" value="1" required>
+                </div>
+
+                <!-- Interactive pricing table details -->
+                <div class="calc-box">
+                    <div class="calc-row">
+                        <span>Single Ticket Price</span>
+                        <span>${{ movie.ticket_price }}</span>
+                    </div>
+                    <div class="calc-row">
+                        <span>Reserved Seats</span>
+                        <span id="seatsQuantity">1</span>
+                    </div>
+                    <div class="calc-row total">
+                        <span>Estimated Total</span>
+                        <span class="total-price-value">$<span id="totalPrice">{{ movie.ticket_price }}</span></span>
+                    </div>
+                </div>
+
+                <!-- SNS notification notice -->
+                <div class="booking-badge">
+                    <span>🔔</span>
+                    <p>
+                        A transactional message will be broadcasted to your verified email address on submission.
+                    </p>
+                </div>
+
+                <button type="submit" class="submit-btn">Confirm & Book Seats</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer>
+        <p>&copy; 2026 CineCloud systems. Scaled with AWS IAM Roles & DynamoDB.</p>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT REAL-TIME CALCULATION & BURGER
+         ========================================== -->
+    <script>
+        const burger = document.getElementById('burgerToggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        burger.addEventListener('click', () => {
+            navLinks.classList.toggle('nav-active');
+            burger.classList.toggle('toggle');
+        });
+
+        // Real-time calculation logic
+        const ticketPrice = parseInt("{{ movie.ticket_price }}");
+        const seatInput = document.getElementById('seatInput');
+        const seatsQuantity = document.getElementById('seatsQuantity');
+        const totalPrice = document.getElementById('totalPrice');
+
+        seatInput.addEventListener('input', () => {
+            let seats = parseInt(seatInput.value);
+            if (isNaN(seats) || seats < 1) {
+                seats = 1;
+            }
+            seatsQuantity.textContent = seats;
+            totalPrice.textContent = seats * ticketPrice;
+        });
+    </script>
+</body>
+</html>

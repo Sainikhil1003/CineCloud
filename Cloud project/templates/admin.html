@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCloud - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ==================================================
+           DESIGN SYSTEM: CORE TOKENS & RESET
+           ================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0c0817 0%, #150b2b 50%, #05030a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-fuchsia: #ff007f;
+            --neon-cyan: #00f0ff;
+            --neon-green: #00ff7f;
+            --text-primary: #ffffff;
+            --text-secondary: #a9a4c2;
+            --btn-gradient: linear-gradient(90deg, #ff007f 0%, #7f00ff 100%);
+            --cyan-gradient: linear-gradient(90deg, #00f0ff 0%, #0072ff 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Glassmorphism Common Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==================================================
+           RESPONSIVE GLOWING NAVBAR
+           ================================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(12, 8, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .nav-btn {
+            background: var(--btn-gradient);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        .burger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .burger div {
+            width: 25px;
+            height: 3px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================================================
+           FLASH MESSAGES
+           ================================================== */
+        .flash-container {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease forwards;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.1);
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.1);
+        }
+
+        .alert-danger {
+            background: rgba(255, 0, 80, 0.1);
+            border: 1px solid rgba(255, 0, 80, 0.3);
+            color: #ff0050;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* ==================================================
+           ADMIN CONTROL hub LAYOUT
+           ================================================== */
+        .container {
+            flex-grow: 1;
+            width: 95%;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 120px 0 80px 0;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .page-title span {
+            background: linear-gradient(90deg, #ff007f 0%, #00f0ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 1. ANALYTICS KPI DASHBOARD */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--btn-gradient);
+        }
+
+        .stat-card.cyan-accent::after {
+            background: var(--cyan-gradient);
+        }
+
+        .stat-card.green-accent::after {
+            background: var(--neon-green);
+        }
+
+        .stat-icon {
+            font-size: 2.3rem;
+            color: var(--neon-fuchsia);
+        }
+
+        .stat-card.cyan-accent .stat-icon {
+            color: var(--neon-cyan);
+        }
+
+        .stat-card.green-accent .stat-icon {
+            color: var(--neon-green);
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stat-info p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 2. DUAL COLUMN CONTROL BOARDS */
+        .control-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 40px;
+            align-items: start;
+            margin-bottom: 50px;
+        }
+
+        /* LEFT SIDE: MOVIE CRUD PANELS */
+        .crud-card {
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .crud-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--btn-gradient);
+        }
+
+        .card-subheader {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 12px;
+        }
+
+        .card-subheader span {
+            color: var(--neon-cyan);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: var(--btn-gradient);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.5);
+        }
+
+        /* Movie List inside Admin */
+        .admin-movie-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .admin-movie-item {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-movie-info h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .admin-movie-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .movie-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .action-link.edit {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .action-link.edit:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+        }
+
+        .action-link.delete {
+            background: rgba(255, 0, 127, 0.1);
+            color: var(--neon-fuchsia);
+            border: 1px solid rgba(255, 0, 127, 0.2);
+        }
+
+        .action-link.delete:hover {
+            background: var(--neon-fuchsia);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.4);
+        }
+
+        /* COLLAPSIBLE EDIT MOVIE PANEL STYLE */
+        .edit-movie-panel {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        /* RIGHT SIDE: REAL-TIME BOOKINGS LIST */
+        .bookings-panel {
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bookings-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--cyan-gradient);
+        }
+
+        /* Glassmorphism Table Styling */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        thead {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        th {
+            padding: 18px 20px;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .ref-cell {
+            font-family: monospace;
+            color: var(--text-secondary);
+        }
+
+        /* Colored status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-requested {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .badge-confirmed {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .badge-tickets {
+            background: rgba(127, 0, 255, 0.1);
+            color: #a040ff;
+            border: 1px solid rgba(127, 0, 255, 0.2);
+        }
+
+        .badge-completed {
+            background: rgba(0, 255, 127, 0.1);
+            color: var(--neon-green);
+            border: 1px solid rgba(0, 255, 127, 0.2);
+        }
+
+        .badge-cancelled {
+            background: rgba(255, 0, 80, 0.1);
+            color: var(--neon-fuchsia);
+            border: 1px solid rgba(255, 0, 80, 0.2);
+        }
+
+        /* Direct Action workflow buttons */
+        .workflow-btn {
+            background: var(--btn-gradient);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+        }
+
+        .workflow-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        .workflow-btn.cancel {
+            background: rgba(255, 0, 80, 0.1);
+            color: var(--neon-fuchsia);
+            border: 1px solid rgba(255, 0, 80, 0.2);
+            box-shadow: none;
+        }
+
+        .workflow-btn.cancel:hover {
+            background: var(--neon-fuchsia);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.3);
+        }
+
+        /* ==================================================
+           FOOTER
+           ================================================== */
+        footer {
+            background: rgba(6, 4, 13, 0.95);
+            border-top: 1px solid var(--glass-border);
+            padding: 30px 5%;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* ==================================================
+           ANIMATIONS & KEYFRAMES
+           ================================================== */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* ==================================================
+           MOBILE RESPONSIVENESS
+           ================================================== */
+        @media screen and (max-width: 1024px) {
+            .control-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: 70px;
+                height: calc(100vh - 70px);
+                background: rgba(12, 8, 23, 0.98);
+                backdrop-filter: blur(25px);
+                flex-direction: column;
+                width: 100%;
+                padding: 50px 0;
+                gap: 30px;
+                transition: right 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .nav-links.nav-active {
+                right: 0;
+            }
+
+            .burger {
+                display: flex;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .bookings-panel {
+                padding: 20px 10px;
+            }
+
+            /* Custom table styling to card stacks on mobile */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                margin-bottom: 20px;
+                padding: 10px;
+                background: rgba(255, 255, 255, 0.02);
+            }
+
+            td {
+                border: none;
+                position: relative;
+                padding-left: 45%;
+                text-align: right;
+                font-size: 0.9rem;
+            }
+
+            td:before {
+                position: absolute;
+                top: 18px;
+                left: 20px;
+                width: 40%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 700;
+                color: var(--neon-cyan);
+            }
+
+            td:nth-of-type(1):before { content: "REF"; }
+            td:nth-of-type(2):before { content: "USER"; }
+            td:nth-of-type(3):before { content: "SHOW/TIMING"; }
+            td:nth-of-type(4):before { content: "SEATS/PRICE"; }
+            td:nth-of-type(5):before { content: "STATUS"; }
+            td:nth-of-type(6):before { content: "ACTION"; }
+        }
+
+        .toggle .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .toggle .line2 {
+            opacity: 0;
+        }
+        .toggle .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION BAR
+         ========================================== -->
+    <nav>
+        <a href="/" class="logo">
+            <span>Cine</span>Cloud
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/admin">Control Center</a></li>
+            <li><a href="/logout" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Sign Out</a></li>
+        </ul>
+        <div class="burger" id="burgerToggle">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         FLASH MESSAGES
+         ========================================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-btn" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         ADMIN HUB WORKSPACE
+         ========================================== -->
+    <main class="container">
+        <header class="page-header">
+            <h1 class="page-title">Admin <span>Command</span> Center</h1>
+            <a href="/" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Back to Website</a>
+        </header>
+
+        <!-- 1. STATS GRID -->
+        <section class="analytics-grid">
+            <div class="glass-card stat-card green-accent">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <h3>${{ sales }}</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+            <div class="glass-card stat-card cyan-accent">
+                <div class="stat-icon">🎟️</div>
+                <div class="stat-info">
+                    <h3>{{ tickets }}</h3>
+                    <p>Tickets Reserved</p>
+                </div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-info">
+                    <h3>{{ active }}</h3>
+                    <p>Active Bookings</p>
+                </div>
+            </div>
+            <div class="glass-card stat-card cyan-accent">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-info">
+                    <h3>{{ movie_count }}</h3>
+                    <p>Active Shows</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. DUAL CONTROLS GRID -->
+        <section class="control-grid">
+            
+            <!-- LEFT COLUMN: CRUD MOVIE MANAGEMENT -->
+            <div class="left-controls">
+                
+                <!-- A: Add Movie Panel -->
+                <div class="glass-card crud-card">
+                    <h3 class="card-subheader">Add New <span>Movie</span></h3>
+                    <form action="/add_movie" method="POST">
+                        <div class="form-group">
+                            <label for="movieName">MOVIE NAME</label>
+                            <input type="text" id="movieName" name="movie_name" placeholder="e.g. Inception" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="movieTheater">THEATER HALL</label>
+                            <input type="text" id="movieTheater" name="theater" placeholder="e.g. Screen 1 - IMAX" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="movieTiming">SHOW TIME</label>
+                            <input type="text" id="movieTiming" name="timing" placeholder="e.g. 19:45" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="moviePrice">PRICE / SEAT ($)</label>
+                            <input type="number" id="moviePrice" name="ticket_price" placeholder="e.g. 15" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="movieImage">POSTER URL (OPTIONAL)</label>
+                            <input type="url" id="movieImage" name="image_url" placeholder="https://images.unsplash.com/...">
+                        </div>
+                        <button type="submit" class="submit-btn">Publish Show</button>
+                    </form>
+                </div>
+
+                <!-- B: Movie Listing & Editor -->
+                <div class="glass-card crud-card">
+                    <h3 class="card-subheader">Current <span>Showtimes</span></h3>
+                    <div class="admin-movie-list">
+                        {% if movies %}
+                            {% for movie in movies %}
+                                <div class="glass-card admin-movie-item" style="border-radius: 10px; background: rgba(255,255,255,0.02)">
+                                    <div class="admin-movie-info">
+                                        <h4>{{ movie.movie_name }}</h4>
+                                        <p>{{ movie.theater }} | {{ movie.timing }}</p>
+                                        <p style="color: var(--neon-cyan); font-weight: 700; margin-top: 4px;">${{ movie.ticket_price }}</p>
+                                    </div>
+                                    <div class="movie-actions">
+                                        <button class="action-link edit" onclick="toggleEditPanel('{{ movie.movie_id }}')">Edit</button>
+                                        <a href="/delete_movie/{{ movie.movie_id }}" class="action-link delete" onclick="return confirm('Delete this movie? All future bookings depend on it!')">Delete</a>
+                                    </div>
+                                </div>
+
+                                <!-- Collapsible Edit Form Panel for this Movie -->
+                                <div id="edit-panel-{{ movie.movie_id }}" class="edit-movie-panel">
+                                    <form action="/edit_movie/{{ movie.movie_id }}" method="POST">
+                                        <div class="form-group">
+                                            <label>Movie Name</label>
+                                            <input type="text" name="movie_name" value="{{ movie.movie_name }}" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Theater</label>
+                                            <input type="text" name="theater" value="{{ movie.theater }}" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Timing</label>
+                                            <input type="text" name="timing" value="{{ movie.timing }}" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Price ($)</label>
+                                            <input type="number" name="ticket_price" value="{{ movie.ticket_price }}" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Poster URL</label>
+                                            <input type="url" name="image_url" value="{{ movie.image_url }}">
+                                        </div>
+                                        <button type="submit" class="submit-btn" style="background: var(--cyan-gradient); box-shadow: none;">Save Changes</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        {% else: %}
+                            <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem;">No active shows loaded.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: MASTER BOOKINGS WORKFLOW MANAGER -->
+            <div class="glass-card bookings-panel">
+                <h3 class="card-subheader">Customer <span>Reservations Queue</span></h3>
+                <p class="form-subtitle">Review ticket orders. Advancing statuses updates AWS DynamoDB and broadcasts real-time emails via AWS SNS.</p>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>REF ID</th>
+                                <th>User</th>
+                                <th>Show / Timing</th>
+                                <th>Seats / Price</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Workflow Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if bookings %}
+                                {% for booking in bookings %}
+                                    <tr>
+                                        <!-- REF CELL -->
+                                        <td class="ref-cell">#{{ booking.booking_id[:8] }}</td>
+                                        
+                                        <!-- USER CELL -->
+                                        <td>
+                                            <span style="font-weight: 600; display: block;">{{ booking.user_name }}</span>
+                                            <span style="font-size: 0.8rem; color: var(--text-secondary)">ID: {{ booking.user_id[:8] }}</span>
+                                        </td>
+                                        
+                                        <!-- SHOWTIME CELL -->
+                                        <td>
+                                            <span style="font-weight: 600; display: block;">{{ booking.movie_name }}</span>
+                                        </td>
+                                        
+                                        <!-- SEATS / PRICE -->
+                                        <td>
+                                            <span style="font-weight: 600; display: block;">{{ booking.seats }} seats</span>
+                                            <span style="color: var(--neon-green); font-weight: 700;">${{ booking.total_price }}</span>
+                                        </td>
+                                        
+                                        <!-- STATUS BADGE -->
+                                        <td>
+                                            {% if booking.status == 'Requested' %}
+                                                <span class="status-badge badge-requested">Requested</span>
+                                            {% elif booking.status == 'Confirmed' %}
+                                                <span class="status-badge badge-confirmed">Confirmed</span>
+                                            {% elif booking.status == 'Tickets Generated' %}
+                                                <span class="status-badge badge-tickets">Tickets Ready</span>
+                                            {% elif booking.status == 'Completed' %}
+                                                <span class="status-badge badge-completed">Completed</span>
+                                            {% elif booking.status == 'Cancelled' %}
+                                                <span class="status-badge badge-cancelled">Cancelled</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- ACTION BUTTONS -->
+                                        <td>
+                                            <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                                                {% if booking.status == 'Requested' %}
+                                                    <form action="/update_status/{{ booking.booking_id }}" method="POST" style="display:inline;">
+                                                        <input type="hidden" name="status" value="Confirmed">
+                                                        <button type="submit" class="workflow-btn">Confirm Order</button>
+                                                    </form>
+                                                {% elif booking.status == 'Confirmed' %}
+                                                    <form action="/update_status/{{ booking.booking_id }}" method="POST" style="display:inline;">
+                                                        <input type="hidden" name="status" value="Tickets Generated">
+                                                        <button type="submit" class="workflow-btn" style="background: var(--cyan-gradient); box-shadow: none;">Issue Ticket</button>
+                                                    </form>
+                                                {% elif booking.status == 'Tickets Generated' %}
+                                                    <form action="/update_status/{{ booking.booking_id }}" method="POST" style="display:inline;">
+                                                        <input type="hidden" name="status" value="Completed">
+                                                        <button type="submit" class="workflow-btn" style="background: var(--neon-green); box-shadow: none; color: #000;">Complete</button>
+                                                    </form>
+                                                {% else %}
+                                                    <span style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600;">Archive Completed</span>
+                                                {% endif %}
+
+                                                <!-- Cancel Option (Only if not already processed as completed or cancelled) -->
+                                                {% if booking.status not in ['Completed', 'Cancelled'] %}
+                                                    <form action="/update_status/{{ booking.booking_id }}" method="POST" style="display:inline;">
+                                                        <input type="hidden" name="status" value="Cancelled">
+                                                        <button type="submit" class="workflow-btn cancel" onclick="return confirm('Cancel this ticket booking?')">Cancel</button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else: %}
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 40px 0;">
+                                        No customer bookings found in AWS DynamoDB queue.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer>
+        <p>&copy; 2026 CineCloud systems. Scaled with AWS IAM Roles & DynamoDB.</p>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT COLLAPSIBLE & BURGER INTERACTION
+         ========================================== -->
+    <script>
+        const burger = document.getElementById('burgerToggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        burger.addEventListener('click', () => {
+            navLinks.classList.toggle('nav-active');
+            burger.classList.toggle('toggle');
+        });
+
+        // Collapsible editor form toggle
+        function toggleEditPanel(movieId) {
+            const panel = document.getElementById(`edit-panel-${movieId}`);
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

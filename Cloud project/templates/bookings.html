@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCloud - My Tickets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ==================================================
+           DESIGN SYSTEM: CORE TOKENS & RESET
+           ================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0c0817 0%, #150b2b 50%, #05030a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-fuchsia: #ff007f;
+            --neon-cyan: #00f0ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a9a4c2;
+            --btn-gradient: linear-gradient(90deg, #ff007f 0%, #7f00ff 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Glassmorphism Common Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==================================================
+           RESPONSIVE GLOWING NAVBAR
+           ================================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(12, 8, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .nav-btn {
+            background: var(--btn-gradient);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        .burger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .burger div {
+            width: 25px;
+            height: 3px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================================================
+           FLASH MESSAGES
+           ================================================== */
+        .flash-container {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease forwards;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.1);
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* ==================================================
+           USER BOOKINGS history VIEWPORT
+           ================================================== */
+        .container {
+            flex-grow: 1;
+            width: 90%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 120px 0 80px 0;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .page-title span {
+            background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Bookings List Cards */
+        .bookings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .booking-card {
+            padding: 35px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .booking-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--btn-gradient);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 15px;
+        }
+
+        .booking-ref {
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+        }
+
+        .total-price-label {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .total-price-label span {
+            color: var(--neon-cyan);
+        }
+
+        .card-body-details {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .movie-info h3 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .show-meta-text {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .show-meta-text span {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* LIVE STATUS STEPPER COMPONENT */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-top: 20px;
+            padding: 0 10px;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            z-index: 1;
+        }
+
+        .step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #120e24;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            transition: all 0.4s ease;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.4s ease;
+        }
+
+        /* Completed / Active nodes logic */
+        .step.completed .step-circle {
+            background: var(--neon-fuchsia);
+            border-color: var(--neon-fuchsia);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+        }
+
+        .step.completed .step-label {
+            color: var(--neon-fuchsia);
+        }
+
+        .step.active .step-circle {
+            background: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            color: #0c0817;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+
+        .step.active .step-label {
+            color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        /* Cancelled Warning Notice */
+        .cancelled-banner {
+            background: rgba(255, 0, 80, 0.06);
+            border: 1px solid rgba(255, 0, 80, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            color: #ff0050;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.1);
+        }
+
+        /* ==================================================
+           FOOTER
+           ================================================== */
+        footer {
+            background: rgba(6, 4, 13, 0.95);
+            border-top: 1px solid var(--glass-border);
+            padding: 30px 5%;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* ==================================================
+           ANIMATIONS & KEYFRAMES
+           ================================================== */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* ==================================================
+           MOBILE RESPONSIVENESS
+           ================================================== */
+        @media screen and (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: 70px;
+                height: calc(100vh - 70px);
+                background: rgba(12, 8, 23, 0.98);
+                backdrop-filter: blur(25px);
+                flex-direction: column;
+                width: 100%;
+                padding: 50px 0;
+                gap: 30px;
+                transition: right 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .nav-links.nav-active {
+                right: 0;
+            }
+
+            .burger {
+                display: flex;
+            }
+
+            .card-body-details {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stepper {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+                padding-left: 20px;
+            }
+
+            .stepper::before {
+                width: 2px;
+                height: 100%;
+                left: 25px;
+                top: 0;
+            }
+
+            .step {
+                flex-direction: row;
+                gap: 20px;
+            }
+        }
+
+        .toggle .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .toggle .line2 {
+            opacity: 0;
+        }
+        .toggle .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION BAR
+         ========================================== -->
+    <nav>
+        <a href="/" class="logo">
+            <span>Cine</span>Cloud
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/movies">Movies</a></li>
+            <li><a href="/bookings">My Bookings</a></li>
+            <li><a href="/logout" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Sign Out</a></li>
+        </ul>
+        <div class="burger" id="burgerToggle">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         FLASH MESSAGES
+         ========================================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-btn" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         BOOKINGS TIMELINE TRACKER
+         ========================================== -->
+    <section class="container">
+        <div class="page-header">
+            <h1 class="page-title">My <span>Dashboard</span></h1>
+            <p class="page-subtitle">Track your seat reservation workflow and view active tickets.</p>
+        </div>
+
+        <div class="bookings-list">
+            {% if bookings %}
+                {% for booking in bookings %}
+                    <div class="glass-card booking-card">
+                        <div class="card-header">
+                            <span class="booking-ref">REF: #{{ booking.booking_id }}</span>
+                            <span class="total-price-label">TOTAL: <span>${{ booking.total_price }}</span></span>
+                        </div>
+
+                        <div class="card-body-details">
+                            <div class="movie-info">
+                                <h3>{{ booking.movie_name }}</h3>
+                                <p class="show-meta-text">Theater: <span>{{ booking.theater }}</span></p>
+                                <p class="show-meta-text">Showtime: <span>{{ booking.timing }}</span></p>
+                            </div>
+                            <div class="seats-info" style="text-align: right;">
+                                <p class="show-meta-text" style="font-size: 1.1rem;">Seats Booked: <span style="font-size: 1.4rem; color: var(--neon-cyan); font-weight: 800;">{{ booking.seats }}</span></p>
+                            </div>
+                        </div>
+
+                        <!-- CONDITIONAL TIMELINE OR CANCELLED STATUS -->
+                        {% if booking.status == 'Cancelled' %}
+                            <div class="cancelled-banner">
+                                ❌ THIS BOOKING HAS BEEN CANCELLED BY THE ADMINISTRATOR
+                            </div>
+                        {% else %}
+                            <div class="stepper">
+                                <!-- Step 1: Requested -->
+                                <div class="step {% if booking.status in ['Requested', 'Confirmed', 'Tickets Generated', 'Completed'] %}completed{% endif %} {% if booking.status == 'Requested' %}active{% endif %}">
+                                    <div class="step-circle">1</div>
+                                    <span class="step-label">Requested</span>
+                                </div>
+
+                                <!-- Step 2: Confirmed -->
+                                <div class="step {% if booking.status in ['Confirmed', 'Tickets Generated', 'Completed'] %}completed{% endif %} {% if booking.status == 'Confirmed' %}active{% endif %}">
+                                    <div class="step-circle">2</div>
+                                    <span class="step-label">Confirmed</span>
+                                </div>
+
+                                <!-- Step 3: Tickets Generated -->
+                                <div class="step {% if booking.status in ['Tickets Generated', 'Completed'] %}completed{% endif %} {% if booking.status == 'Tickets Generated' %}active{% endif %}">
+                                    <div class="step-circle">3</div>
+                                    <span class="step-label">Tickets Ready</span>
+                                </div>
+
+                                <!-- Step 4: Completed -->
+                                <div class="step {% if booking.status == 'Completed' %}completed active{% endif %}">
+                                    <div class="step-circle">4</div>
+                                    <span class="step-label">Completed</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-card" style="padding: 60px; text-align: center; color: var(--text-secondary);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 10px;">You haven't reserved any tickets yet.</h3>
+                    <p style="margin-bottom: 30px;">Choose a movie showtime to initialize your first booking.</p>
+                    <a href="/movies" class="nav-btn" style="padding: 12px 30px;">Find Movie Showtimes</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer>
+        <p>&copy; 2026 CineCloud systems. Scaled with AWS IAM Roles & DynamoDB.</p>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT BURGER CONTROL
+         ========================================== -->
+    <script>
+        const burger = document.getElementById('burgerToggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        burger.addEventListener('click', () => {
+            navLinks.classList.toggle('nav-active');
+            burger.classList.toggle('toggle');
+        });
+    </script>
+</body>
+</html>

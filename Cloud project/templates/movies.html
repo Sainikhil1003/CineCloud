@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCloud - Showtimes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ==================================================
+           DESIGN SYSTEM: CORE TOKENS & RESET
+           ================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0c0817 0%, #150b2b 50%, #05030a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-fuchsia: #ff007f;
+            --neon-cyan: #00f0ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a9a4c2;
+            --btn-gradient: linear-gradient(90deg, #ff007f 0%, #7f00ff 100%);
+            --cyan-gradient: linear-gradient(90deg, #00f0ff 0%, #0072ff 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Glassmorphism Common Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==================================================
+           RESPONSIVE GLOWING NAVBAR
+           ================================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(12, 8, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .nav-btn {
+            background: var(--btn-gradient);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        .burger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .burger div {
+            width: 25px;
+            height: 3px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================================================
+           FLASH MESSAGES
+           ================================================== */
+        .flash-container {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease forwards;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.1);
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.1);
+        }
+
+        .alert-danger {
+            background: rgba(255, 0, 80, 0.1);
+            border: 1px solid rgba(255, 0, 80, 0.3);
+            color: #ff0050;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* ==================================================
+           MOVIES GRID LAYOUT
+           ================================================== */
+        .container {
+            flex-grow: 1;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 120px 0 80px 0;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            text-align: left;
+            position: relative;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .page-title span {
+            background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .movie-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 15px 40px rgba(0, 240, 255, 0.15);
+        }
+
+        .movie-img-container {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .movie-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .movie-card:hover .movie-img {
+            transform: scale(1.08);
+        }
+
+        .price-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(12, 8, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--neon-cyan);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            font-size: 0.95rem;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+        }
+
+        .movie-body {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .movie-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            line-height: 1.3;
+        }
+
+        .movie-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .meta-label {
+            color: var(--neon-fuchsia);
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .book-card-btn {
+            margin-top: 25px;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            font-size: 1.02rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .movie-card:hover .book-card-btn {
+            background: var(--btn-gradient);
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        /* ==================================================
+           FOOTER
+           ================================================== */
+        footer {
+            background: rgba(6, 4, 13, 0.95);
+            border-top: 1px solid var(--glass-border);
+            padding: 30px 5%;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* ==================================================
+           ANIMATIONS & KEYFRAMES
+           ================================================== */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* ==================================================
+           MOBILE RESPONSIVENESS
+           ================================================== */
+        @media screen and (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: 70px;
+                height: calc(100vh - 70px);
+                background: rgba(12, 8, 23, 0.98);
+                backdrop-filter: blur(25px);
+                flex-direction: column;
+                width: 100%;
+                padding: 50px 0;
+                gap: 30px;
+                transition: right 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .nav-links.nav-active {
+                right: 0;
+            }
+
+            .burger {
+                display: flex;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+
+        .toggle .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .toggle .line2 {
+            opacity: 0;
+        }
+        .toggle .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION BAR
+         ========================================== -->
+    <nav>
+        <a href="/" class="logo">
+            <span>Cine</span>Cloud
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/movies">Movies</a></li>
+            <li><a href="/bookings">My Bookings</a></li>
+            <li><a href="/logout" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Sign Out</a></li>
+        </ul>
+        <div class="burger" id="burgerToggle">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         FLASH MESSAGES
+         ========================================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-btn" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         MOVIES VIEW SHOWROOM
+         ========================================== -->
+    <section class="container">
+        <div class="page-header">
+            <h1 class="page-title">Explore <span>Showtimes</span></h1>
+            <p class="page-subtitle">Pick from our curated selection of high-end immersive theaters.</p>
+        </div>
+
+        <div class="movie-grid">
+            {% if movies %}
+                {% for movie in movies %}
+                    <div class="glass-card movie-card">
+                        <div class="movie-img-container">
+                            <span class="price-badge">${{ movie.ticket_price }} / seat</span>
+                            <img src="{{ movie.image_url }}" alt="{{ movie.movie_name }}" class="movie-img">
+                        </div>
+                        <div class="movie-body">
+                            <h3 class="movie-title">{{ movie.movie_name }}</h3>
+                            <div class="movie-meta-item">
+                                <span class="meta-label">THEATER:</span>
+                                <span>{{ movie.theater }}</span>
+                            </div>
+                            <div class="movie-meta-item">
+                                <span class="meta-label">TIMING:</span>
+                                <span>{{ movie.timing }}</span>
+                            </div>
+                            <a href="/book/{{ movie.movie_id }}" class="book-card-btn">Select Seats & Book</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else: %}
+                <div class="glass-card" style="grid-column: 1 / -1; padding: 50px; text-align: center; color: var(--text-secondary);">
+                    <h3>No movie showtimes loaded in the database yet.</h3>
+                    <p style="margin-top: 10px;">Please check back shortly or contact our administrator.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer>
+        <p>&copy; 2026 CineCloud systems. Scaled with AWS IAM Roles & DynamoDB.</p>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT BURGER CONTROL
+         ========================================== -->
+    <script>
+        const burger = document.getElementById('burgerToggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        burger.addEventListener('click', () => {
+            navLinks.classList.toggle('nav-active');
+            burger.classList.toggle('toggle');
+        });
+    </script>
+</body>
+</html>

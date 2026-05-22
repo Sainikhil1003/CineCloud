@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineCloud - Movie Ticket Booking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ==================================================
+           DESIGN SYSTEM: CORE TOKENS & RESET
+           ================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0c0817 0%, #150b2b 50%, #05030a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-glow-border: rgba(0, 240, 255, 0.2);
+            --neon-fuchsia: #ff007f;
+            --neon-cyan: #00f0ff;
+            --text-primary: #ffffff;
+            --text-secondary: #a9a4c2;
+            --btn-gradient: linear-gradient(90deg, #ff007f 0%, #7f00ff 100%);
+            --cyan-gradient: linear-gradient(90deg, #00f0ff 0%, #0072ff 100%);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0817;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #251845;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-fuchsia);
+        }
+
+        /* Glassmorphism Common Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* ==================================================
+           RESPONSIVE GLOWING NAVBAR
+           ================================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(12, 8, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            background: var(--btn-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        /* Premium Nav CTA */
+        .nav-btn {
+            background: var(--btn-gradient);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+        }
+
+        /* Hamburger Menu */
+        .burger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .burger div {
+            width: 25px;
+            height: 3px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        /* ==================================================
+           FLASH MESSAGES
+           ================================================== */
+        .flash-container {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.4s ease forwards;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.1);
+            border: 1px solid rgba(0, 255, 127, 0.3);
+            color: #00ff7f;
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.1);
+        }
+
+        .alert-danger {
+            background: rgba(255, 0, 80, 0.1);
+            border: 1px solid rgba(255, 0, 80, 0.3);
+            color: #ff0050;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.1);
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+
+        .alert-info {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--neon-cyan);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* ==================================================
+           HERO SECTION
+           ================================================== */
+        .hero {
+            padding: 160px 5% 80px 5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-glow-1 {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 0, 127, 0.15);
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+        }
+
+        .hero-glow-2 {
+            position: absolute;
+            top: 40%;
+            right: 20%;
+            width: 350px;
+            height: 350px;
+            background: rgba(0, 240, 255, 0.12);
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+        }
+
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-glow-border);
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--neon-cyan);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        .hero-title span {
+            background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin-bottom: 40px;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 20px;
+        }
+
+        .cta-primary {
+            background: var(--btn-gradient);
+            padding: 14px 35px;
+            border-radius: 30px;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+            transition: all 0.3s;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 35px rgba(255, 0, 127, 0.7);
+        }
+
+        .cta-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 14px 35px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--neon-cyan);
+            transform: translateY(-3px);
+        }
+
+        /* ==================================================
+           CLOUD METRICS / ANALYTICS
+           ================================================== */
+        .analytics-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto 100px auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .stat-card {
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--btn-gradient);
+        }
+
+        .stat-card.aws-card::before {
+            background: var(--cyan-gradient);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            color: var(--neon-fuchsia);
+        }
+
+        .stat-card.aws-card .stat-icon {
+            color: var(--neon-cyan);
+        }
+
+        .stat-info h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stat-info p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ==================================================
+           FEATURED SHOWS SHOWCASE
+           ================================================== */
+        .featured-section {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto 100px auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--neon-cyan);
+            border-radius: 2px;
+            margin-top: 10px;
+        }
+
+        .section-link {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .section-link:hover {
+            color: var(--neon-fuchsia);
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .movie-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 0, 127, 0.3);
+            box-shadow: 0 15px 40px rgba(255, 0, 127, 0.15);
+        }
+
+        .movie-img-container {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .movie-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .movie-card:hover .movie-img {
+            transform: scale(1.08);
+        }
+
+        .price-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(12, 8, 23, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--neon-fuchsia);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: var(--neon-fuchsia);
+            font-size: 0.95rem;
+            box-shadow: 0 0 12px rgba(255, 0, 127, 0.3);
+        }
+
+        .movie-body {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .movie-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .movie-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .meta-label {
+            color: var(--neon-cyan);
+            font-weight: 600;
+        }
+
+        .book-card-btn {
+            margin-top: auto;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .movie-card:hover .book-card-btn {
+            background: var(--btn-gradient);
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        /* ==================================================
+           CTA BANNER SECTION
+           ================================================== */
+        .cta-banner {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto 100px auto;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 0, 127, 0.08) 0%, rgba(0, 0, 0, 0) 60%);
+            z-index: -1;
+        }
+
+        .banner-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .banner-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 35px auto;
+        }
+
+        /* ==================================================
+           FOOTER
+           ================================================== */
+        footer {
+            background: rgba(6, 4, 13, 0.95);
+            border-top: 1px solid var(--glass-border);
+            padding: 40px 5%;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        footer p {
+            margin-bottom: 10px;
+        }
+
+        footer a {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        footer a:hover {
+            color: var(--neon-fuchsia);
+        }
+
+        /* ==================================================
+           ANIMATIONS & KEYFRAMES
+           ================================================== */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+                border-color: rgba(0, 240, 255, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            }
+        }
+
+        /* ==================================================
+           MOBILE RESPONSIVENESS
+           ================================================== */
+        @media screen and (max-width: 768px) {
+            .hero-title {
+                font-size: 2.6rem;
+            }
+
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: 70px;
+                height: calc(100vh - 70px);
+                background: rgba(12, 8, 23, 0.98);
+                backdrop-filter: blur(25px);
+                flex-direction: column;
+                width: 100%;
+                padding: 50px 0;
+                gap: 30px;
+                transition: right 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+                border-left: 1px solid var(--glass-border);
+            }
+
+            .nav-links.nav-active {
+                right: 0;
+            }
+
+            .burger {
+                display: flex;
+            }
+
+            .hero {
+                padding-top: 130px;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .featured-section {
+                margin-bottom: 60px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .cta-banner {
+                padding: 40px 20px;
+            }
+
+            .banner-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Hamburger Toggle Animation */
+        .toggle .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        .toggle .line2 {
+            opacity: 0;
+        }
+        .toggle .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION BAR
+         ========================================== -->
+    <nav>
+        <a href="/" class="logo">
+            <span>Cine</span>Cloud
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            {% if session_user_name %}
+                {% if is_admin %}
+                    <li><a href="/admin">Admin Dashboard</a></li>
+                {% else: %}
+                    <li><a href="/movies">Movies</a></li>
+                    <li><a href="/bookings">My Bookings</a></li>
+                {% endif %}
+                <li><a href="/logout" class="nav-btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none;">Sign Out</a></li>
+            {% else: %}
+                <li><a href="/login">Sign In</a></li>
+                <li><a href="/register" class="nav-btn">Register</a></li>
+            {% endif %}
+        </ul>
+        <div class="burger" id="burgerToggle">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </nav>
+
+    <!-- ==========================================
+         FLASH MESSAGES
+         ========================================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-btn" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         HERO LANDING HEADER
+         ========================================== -->
+    <header class="hero">
+        <div class="hero-glow-1"></div>
+        <div class="hero-glow-2"></div>
+        
+        {% if aws_enabled %}
+            <div class="hero-badge">AWS Integration Active</div>
+        {% else %}
+            <div class="hero-badge" style="color: #ffc107; border-color: rgba(255, 193, 7, 0.2); box-shadow: 0 0 10px rgba(255,193,7,0.2);">Sandbox Mode Active</div>
+        {% endif %}
+        
+        <h1 class="hero-title">Elevate Your Movie Experience on <span>CineCloud</span></h1>
+        <p class="hero-subtitle">
+            Secure seats instantly with state-of-the-art serverless booking. Powered by Amazon DynamoDB & instant AWS SNS notification pipelines.
+        </p>
+        <div class="hero-ctas">
+            {% if session_user_name %}
+                {% if is_admin %}
+                    <a href="/admin" class="cta-primary">Go to Control Center</a>
+                {% else %}
+                    <a href="/movies" class="cta-primary">Browse Active Shows</a>
+                {% endif %}
+            {% else %}
+                <a href="/register" class="cta-primary">Register Account</a>
+                <a href="/login" class="cta-secondary">Member Sign In</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- ==========================================
+         CLOUD METRICS / SYSTEM DASHBOARD CARDS
+         ========================================== -->
+    <section class="analytics-container">
+        <div class="glass-card stat-card">
+            <div class="stat-icon">🎬</div>
+            <div class="stat-info">
+                <h3>4+</h3>
+                <p class="meta-label">Seeded Showtimes</p>
+            </div>
+        </div>
+        <div class="glass-card stat-card aws-card">
+            <div class="stat-icon">💾</div>
+            <div class="stat-info">
+                <h3>DynamoDB</h3>
+                <p>Fully Serverless Datastore</p>
+            </div>
+        </div>
+        <div class="glass-card stat-card">
+            <div class="stat-icon">🔔</div>
+            <div class="stat-info">
+                <h3>AWS SNS</h3>
+                <p>Real-time Email Alerts</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         FEATURED MOVIES
+         ========================================== -->
+    <section class="featured-section">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Now Showing</h2>
+            </div>
+            {% if session_user_name and not is_admin %}
+                <a href="/movies" class="section-link">View all movies &rarr;</a>
+            {% endif %}
+        </div>
+
+        <div class="movie-grid">
+            {% if featured_movies %}
+                {% for movie in featured_movies %}
+                    <div class="glass-card movie-card">
+                        <div class="movie-img-container">
+                            <span class="price-badge">${{ movie.ticket_price }}</span>
+                            <img src="{{ movie.image_url }}" alt="{{ movie.movie_name }}" class="movie-img">
+                        </div>
+                        <div class="movie-body">
+                            <h3 class="movie-title">{{ movie.movie_name }}</h3>
+                            <div class="movie-meta-item">
+                                <span class="meta-label">Theater:</span>
+                                <span>{{ movie.theater }}</span>
+                            </div>
+                            <div class="movie-meta-item">
+                                <span class="meta-label">Timing:</span>
+                                <span>{{ movie.timing }}</span>
+                            </div>
+                            
+                            {% if session_user_name %}
+                                {% if is_admin %}
+                                    <a href="/admin" class="book-card-btn" style="margin-top: 20px;">Manage Show</a>
+                                {% else %}
+                                    <a href="/book/{{ movie.movie_id }}" class="book-card-btn" style="margin-top: 20px;">Book Tickets</a>
+                                {% endif %}
+                            {% else %}
+                                <a href="/login" class="book-card-btn" style="margin-top: 20px;">Sign In to Book</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-card" style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">
+                    <h3>No movies currently loaded in the cloud.</h3>
+                    <p style="margin-top: 10px;">Please login as administrator to seed showtimes.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ==========================================
+         CALL TO ACTION FOR NOTIFICATIONS
+         ========================================== -->
+    <section class="cta-banner glass-card">
+        <h2 class="banner-title">Stay Updated via AWS Simple Notification Service</h2>
+        <p class="banner-desc">
+            Receive email tickets and lifecycle updates instantly. When you register, AWS SNS sends a subscription confirmation link directly to your inbox.
+        </p>
+        {% if not session_user_name %}
+            <a href="/register" class="cta-primary">Join CineCloud Now</a>
+        {% endif %}
+    </section>
+
+    <!-- ==========================================
+         FOOTER
+         ========================================== -->
+    <footer>
+        <p>&copy; 2026 CineCloud systems. Built with Flask, Boto3, DynamoDB, SNS, and IAM Roles.</p>
+        <p>Directly deployable to EC2 using the AWS Instance Metadata credentials.</p>
+    </footer>
+
+    <!-- ==========================================
+         RESPONSIVE NAVIGATION JAVASCRIPT
+         ========================================== -->
+    <script>
+        const burger = document.getElementById('burgerToggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        burger.addEventListener('click', () => {
+            // Toggle Nav Open class
+            navLinks.classList.toggle('nav-active');
+            
+            // Animate Hamburger
+            burger.classList.toggle('toggle');
+        });
+    </script>
+</body>
+</html>
